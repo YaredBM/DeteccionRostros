@@ -1,0 +1,67 @@
+#Importar imagen desde URL
+import requests
+%matplotlib inline
+import matplotlib.pyplot as plt
+import json
+from PIL import Image
+from io import BytesIO
+
+subscription_key = "Ingresar clave"
+analyze_url = "Nombre del Extremo/vision/v3.1/analyze"
+image_url = input("Enter Image URL :- ")
+headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+params = {'visualFeatures': 'Categories,Description,Faces,Objects'}
+data = {'url': image_url}
+
+try:
+    response = requests.post(analyze_url, headers=headers,params=params, json=data)
+    response.raise_for_status()
+    analysis = response.json()
+except Exception as e:
+    print("[Errno {0}] {1}".format(e.errno, e.strerror))
+
+image = Image.open(BytesIO(requests.get(image_url).content))
+plt.imshow(image)
+
+*Se muestra la imagen y luego:
+print(analysis)
+
+*Se obtiene el analysis completo y luego:
+analysis['faces']
+
+#Mostrar la ubicación de las caras:
+
+faces =[]
+for rec in analysis['faces']:
+    k=[]
+    k.append(rec['faceRectangle']['left'])
+    k.append(rec['faceRectangle']['top'])
+    k.append(rec['faceRectangle']['width'])
+    k.append(rec['faceRectangle']['height'])
+    faces.append(k)
+faces
+
+
+#Para mostrar recuadro de imágenes:
+
+import numpy as np
+import cv2
+
+
+def generate_bounding_box(image_url, boundRect):
+    image = Image.open(BytesIO(requests.get(image_url).content))
+    np_img = np.asarray(image)
+    drawing = np_img
+    for i in range(len(boundRect)):
+        color = (255,0,0)
+        cv2.rectangle(drawing, (int(boundRect[i][0]), int(boundRect[i][1])), \
+          (int(boundRect[i][0]+boundRect[i][2]), int(boundRect[i][1]+boundRect[i][3])), color, 2)
+
+
+    #Mostrar cuadros en la Imagen
+    plt.figure(figsize=(14,8))
+    plt.imshow(drawing)
+    plt.axis("off")
+    plt.show()
+    
+generate_bounding_box(image_url, faces)
